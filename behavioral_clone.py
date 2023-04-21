@@ -1,6 +1,8 @@
 # Train an agent in a behavior-clone (supervised-learning) style
 import sys
 
+import numpy as np
+
 sys.path.append("..")
 
 import pandas as pd
@@ -10,6 +12,7 @@ from stable_baselines3 import PPO
 from env import singleEnv
 
 EXPERT_PATH = "expert_policy.csv"
+
 
 # For loading expert dataset
 class ExpertSet(Dataset):
@@ -71,11 +74,12 @@ def train_loop(model, dataloader, val_dataloader, optimizer, criterion, device, 
                     for val_states, val_actions in val_dataloader:
                         val_states = val_states.to(torch.float).to(device)
                         val_actions = val_actions.to(torch.long).to(device)
+                        # expert_action, _ = expert_policy.predict(val_states[x][:4].cpu())
+                        expert_action = model(val_states)
+                        softmax = torch.nn.Softmax(dim=0)
+                        expert_action = [np.argmax(softmax(x).cpu()).item() for x in expert_action]
 
-                        for x in range(len(val_states)):
-                            expert_action, _ = model(val_states[x].cpu())
-                            if expert_action == val_actions[x].item():
-                                val_acc += (1/len(val_states))
+                        val_acc += np.count_nonzero([val_actions[x].cpu() == expert_action[x] for x in range(len(val_actions.cpu()))])/len(val_actions.cpu())
 
                         val_outputs = model(val_states)
                         val_loss += criterion(val_outputs, val_actions).item()
