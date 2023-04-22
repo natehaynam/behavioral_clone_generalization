@@ -27,18 +27,18 @@ class singleEnv(gym.Env):
         # Change the head position based on the button direction
         if button_direction == 1:
             self.player[0] += 50
-        elif button_direction == 0:
-            self.player[0] -= 50
-        elif button_direction == 2:
-            self.player[1] += 50
         elif button_direction == 3:
+            self.player[0] -= 50
+        elif button_direction == 0:
+            self.player[1] += 50
+        elif button_direction == 2:
             self.player[1] -= 50
 
         gem_reward = 0
         # Reward for mining Gem
         if self.player == self.gem_position:
-            self.player_position = [[random.randrange(1, 10) * 50, random.randrange(1, 10) * 50]]
-            self.player = self.player_position[0]
+            #self.player_position = [[random.randrange(1, 10) * 50, random.randrange(1, 10) * 50]]
+            #self.player = self.player_position[0]
             self.score += 1
             gem_reward = 10000
             self.total_gems += 1
@@ -61,19 +61,19 @@ class singleEnv(gym.Env):
         head_x = self.player[0]
         head_y = self.player[1]
 
-        gem_delta_x = self.gem_position[0] - head_x
-        gem_delta_y = self.gem_position[1] - head_y
+        #gem_delta_x = self.gem_position[0] - head_x
+        #gem_delta_y = self.gem_position[1] - head_y
 
         # create observation:
         self.prev_actions.append(action)
-        observation = [head_x, head_y, gem_delta_x, gem_delta_y] + list(self.prev_actions)
+        observation = [head_x, head_y, self.gem_position[0], self.gem_position[1]] + list(self.prev_actions)
         observation = np.array(observation)
 
         return observation, self.total_reward, self.done, info
 
     def render(self):
         cv2.imshow('Single_Agent_PPO', self.img)
-        cv2.waitKey(10)
+        cv2.waitKey(15)
         # Display Grid
         self.img = np.zeros((500, 500, 3), dtype='uint8')
 
@@ -97,7 +97,7 @@ class singleEnv(gym.Env):
         self.num_steps = 0
         # Initial Player and Gem position
         self.player_position = [[random.randrange(1, 10) * 50, random.randrange(1, 10) * 50]]
-        self.gem_position = [100, 350]
+        self.gem_position = [200, 200]
         self.score = 0
         self.prev_button_direction = 1
         self.button_direction = 1
