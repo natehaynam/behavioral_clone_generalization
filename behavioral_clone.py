@@ -11,10 +11,8 @@ from torch import nn
 from torch.utils.data import Dataset, random_split, DataLoader
 from stable_baselines3 import PPO
 from env import singleEnv
-from stable_baselines3 import PPO
-from env import singleEnv
 
-EXPERT_PATH = "expert_policy.csv"
+EXPERT_PATH = "expert_policy_path(10x10).csv"
 
 
 # For loading expert dataset
@@ -36,11 +34,11 @@ class BC(torch.nn.Module):
     def __init__(self, input_size, output_size):
         super(BC, self).__init__()
         self.model = torch.nn.Sequential(
-            torch.nn.Linear(input_size, 16),
+            torch.nn.Linear(input_size, 32),
             torch.nn.ReLU(),
-            torch.nn.Linear(16, 8),
+            torch.nn.Linear(32, 16),
             torch.nn.ReLU(),
-            torch.nn.Linear(8, output_size),
+            torch.nn.Linear(16, output_size),
             torch.nn.Softmax(dim=1)
         )
 
@@ -70,7 +68,7 @@ def train_loop(model, dataloader, val_dataloader, optimizer, criterion, device, 
             optimizer.step()
             if i % 10 == 0:
                 print(f"Epoch [{epoch + 1}/{epochs}], Step [{i}/{len(dataloader)}], Loss: {loss.item():.4f}")
-            if i % 1000 == 0:
+            if i % 500 == 0:
                 # Evaluate the model on the validation set
                 model.eval()
                 with torch.no_grad():
@@ -93,10 +91,11 @@ def train_loop(model, dataloader, val_dataloader, optimizer, criterion, device, 
                     env = singleEnv()
                     env.reset()
                     obs = env.reset()
-                    for i in range(60):
+                    for i in range(20):
                         env.render()
                         env_obs = torch.Tensor([[obs[0], obs[1], obs[2], obs[3]]]).to(torch.float).to(device)
                         action = model(env_obs)
+
                         action = [np.argmax(x.cpu()).item() for x in action][0]
                         obs, reward, done, info = env.step(action)
 
@@ -117,9 +116,9 @@ if __name__ == '__main__':
 
     # Prepare for training
     device = 'cuda:0'
-    bc_agent = BC(input_size=4, output_size=4).to(device)
-    optimizer = torch.optim.Adam(bc_agent.parameters(), lr=0.001)
+    bc_agent = BC(input_size=4, output_size=5).to(device)
+    optimizer = torch.optim.Adam(bc_agent.parameters(), lr=0.0002)
     criterion = torch.nn.CrossEntropyLoss()
 
-    model = train_loop(bc_agent, train_loader, val_loader, optimizer, criterion, device, 1)
+    model = train_loop(bc_agent, train_loader, val_loader, optimizer, criterion, device, 100)
     print(model)
