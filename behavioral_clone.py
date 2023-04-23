@@ -14,7 +14,6 @@ from env import singleEnv
 
 EXPERT_PATH = "expert_policy_path(10x10).csv"
 
-
 # For loading expert dataset
 class ExpertSet(Dataset):
     def __init__(self, csv_file):
@@ -34,11 +33,11 @@ class BC(torch.nn.Module):
     def __init__(self, input_size, output_size):
         super(BC, self).__init__()
         self.model = torch.nn.Sequential(
-            torch.nn.Linear(input_size, 32),
-            torch.nn.ReLU(),
-            torch.nn.Linear(32, 16),
-            torch.nn.ReLU(),
-            torch.nn.Linear(16, output_size),
+            torch.nn.Linear(input_size, 16),
+            torch.nn.LeakyReLU(),
+            torch.nn.Linear(16, 8),
+            torch.nn.LeakyReLU(),
+            torch.nn.Linear(8, output_size),
             torch.nn.Softmax(dim=1)
         )
 
@@ -49,6 +48,7 @@ class BC(torch.nn.Module):
 
 # Training function
 def train_loop(model, dataloader, val_dataloader, optimizer, criterion, device, epochs):
+    max_acc = 0
     # Load model and environment
     env = singleEnv()
     env.reset()
@@ -66,9 +66,7 @@ def train_loop(model, dataloader, val_dataloader, optimizer, criterion, device, 
             loss = criterion(outputs, actions)
             loss.backward()
             optimizer.step()
-            if i % 10 == 0:
-                print(f"Epoch [{epoch + 1}/{epochs}], Step [{i}/{len(dataloader)}], Loss: {loss.item():.4f}")
-            if i % 500 == 0:
+            if i % 12000 == 0:
                 # Evaluate the model on the validation set
                 model.eval()
                 with torch.no_grad():
@@ -82,11 +80,14 @@ def train_loop(model, dataloader, val_dataloader, optimizer, criterion, device, 
                         expert_action = [np.argmax(x.cpu()).item() for x in expert_action]
 
                         val_acc += np.count_nonzero([val_actions[x].cpu() == expert_action[x] for x in range(len(val_actions.cpu()))])/len(val_actions.cpu())
-
+\                       # Insert Model object to render here
                         val_outputs = model(val_states)
                         val_loss += criterion(val_outputs, val_actions).item()
                     val_loss /= len(val_dataloader)
                     val_acc /= len(val_dataloader)
+                    if val_acc >= max_acc:
+                        max_acc=val_acc
+                        torch.save(model.state_dict(), "final_models/model_"+str(max_acc))
 
                     env = singleEnv()
                     env.reset()
@@ -107,10 +108,11 @@ if __name__ == '__main__':
     # Load the expert dataset
     expert_dataset = ExpertSet(EXPERT_PATH)
     # train-val split
-    train_size = int(0.8 * len(expert_dataset))
-    val_size = len(expert_dataset) - train_size
+    #train_size = int(0.8 * len(expert_dataset))
+    #val_size = len(expert_dataset) - train_size
 
-    train_dataset, val_dataset = random_split(expert_dataset, [train_size, val_size])
+    #train_dataset, val_dataset = random_split(expert_dataset, [train_size, val_size])
+    train_dataset, val_dataset = expert_dataset, expert_dataset
     train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=1, shuffle=True)
 
@@ -120,5 +122,9 @@ if __name__ == '__main__':
     optimizer = torch.optim.Adam(bc_agent.parameters(), lr=0.0002)
     criterion = torch.nn.CrossEntropyLoss()
 
-    model = train_loop(bc_agent, train_loader, val_loader, optimizer, criterion, device, 100)
-    print(model)
+    model = train_loop(bc_agent, train_loader, val_loader, optimizer, criterion, device, 1000)
+'''
+    model = BC(input_size=4, output_size=5).to(device)
+    model.load_state_dict(torch.load("final_models/model_1.0"))
+    model.eval()
+'''
