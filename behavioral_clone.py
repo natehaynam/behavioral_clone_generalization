@@ -12,7 +12,7 @@ from torch.utils.data import Dataset, random_split, DataLoader
 from stable_baselines3 import PPO
 from env import singleEnv
 
-EXPERT_PATH = "expert_policy_path(10x10).csv"
+EXPERT_PATH = "expert_policy_path.csv"
 
 # For loading expert dataset
 class ExpertSet(Dataset):
@@ -33,11 +33,11 @@ class BC(torch.nn.Module):
     def __init__(self, input_size, output_size):
         super(BC, self).__init__()
         self.model = torch.nn.Sequential(
-            torch.nn.Linear(input_size, 16),
+            torch.nn.Linear(input_size, 7),
             torch.nn.LeakyReLU(),
-            torch.nn.Linear(16, 8),
+            torch.nn.Linear(7, 5),
             torch.nn.LeakyReLU(),
-            torch.nn.Linear(8, output_size),
+            torch.nn.Linear(5, output_size),
             torch.nn.Softmax(dim=1)
         )
 
@@ -52,7 +52,7 @@ def train_loop(model, dataloader, val_dataloader, optimizer, criterion, device, 
     # Load model and environment
     env = singleEnv()
     env.reset()
-    #model_path = f"final_models/380000.zip"
+    model_path = f"final_models/380000.zip"
     #expert_policy = PPO.load(model_path, env=env)
     model.train()
     for epoch in range(epochs):
@@ -66,7 +66,7 @@ def train_loop(model, dataloader, val_dataloader, optimizer, criterion, device, 
             loss = criterion(outputs, actions)
             loss.backward()
             optimizer.step()
-            if i % 12000 == 0:
+            if i % 20000 == 0:
                 # Evaluate the model on the validation set
                 model.eval()
                 with torch.no_grad():
@@ -80,7 +80,7 @@ def train_loop(model, dataloader, val_dataloader, optimizer, criterion, device, 
                         expert_action = [np.argmax(x.cpu()).item() for x in expert_action]
 
                         val_acc += np.count_nonzero([val_actions[x].cpu() == expert_action[x] for x in range(len(val_actions.cpu()))])/len(val_actions.cpu())
-                       # Insert Model object to render here
+
                         val_outputs = model(val_states)
                         val_loss += criterion(val_outputs, val_actions).item()
                     val_loss /= len(val_dataloader)
@@ -95,11 +95,9 @@ def train_loop(model, dataloader, val_dataloader, optimizer, criterion, device, 
                     for i in range(20):
                         env.render()
                         env_obs = torch.Tensor([[obs[0], obs[1], obs[2], obs[3]]]).to(torch.float).to(device)
-                        print([obs[0], obs[1], obs[2], obs[3]])
                         action = model(env_obs)
 
                         action = [np.argmax(x.cpu()).item() for x in action][0]
-                        print(action)
                         obs, reward, done, info = env.step(action)
 
                 print(f"Validation Loss: {val_loss:.4f}, Validation Accuracy: {val_acc:.4f}")
@@ -119,7 +117,7 @@ if __name__ == '__main__':
     val_loader = DataLoader(val_dataset, batch_size=1, shuffle=True)
 
     # Prepare for training
-    device = 'cpu'
+    device = 'cuda:0'
     bc_agent = BC(input_size=4, output_size=5).to(device)
     optimizer = torch.optim.Adam(bc_agent.parameters(), lr=0.0002)
     criterion = torch.nn.CrossEntropyLoss()
