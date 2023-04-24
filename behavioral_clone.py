@@ -12,7 +12,7 @@ from torch.utils.data import Dataset, random_split, DataLoader
 from stable_baselines3 import PPO
 from env import singleEnv
 
-EXPERT_PATH = "expert_policy_path.csv"
+EXPERT_PATH = "expert_policy_path(10x10).csv"
 
 # For loading expert dataset
 class ExpertSet(Dataset):
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     val_loader = DataLoader(val_dataset, batch_size=1, shuffle=True)
 
     # Prepare for training
-    device = 'cuda:0'
+    device = 'cpu'
     bc_agent = BC(input_size=4, output_size=5).to(device)
     optimizer = torch.optim.Adam(bc_agent.parameters(), lr=0.0002)
     criterion = torch.nn.CrossEntropyLoss()
