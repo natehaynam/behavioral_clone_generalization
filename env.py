@@ -61,9 +61,6 @@ class singleEnv(gym.Env):
         head_x = self.player[0]
         head_y = self.player[1]
 
-        #gem_delta_x = self.gem_position[0] - head_x
-        #gem_delta_y = self.gem_position[1] - head_y
-
         # create observation:
         self.prev_actions.append(action)
         observation = [head_x, head_y, self.gem_position[0], self.gem_position[1]] + list(self.prev_actions)
@@ -108,15 +105,12 @@ class singleEnv(gym.Env):
         head_x = self.player[0]
         head_y = self.player[1]
 
-        gem_delta_x = self.gem_position[0] - head_x
-        gem_delta_y = self.gem_position[1] - head_y
-
         self.prev_actions = deque(maxlen=GOAL)  # however long we aspire the snake to be
         for i in range(GOAL):
             self.prev_actions.append(-1)  # to create history
 
         # create observation:
-        observation = [head_x, head_y, gem_delta_x, gem_delta_y] + list(self.prev_actions)
+        observation = [head_x, head_y, self.gem_position[0], self.gem_position[1]] + list(self.prev_actions)
         observation = np.array(observation)
 
         return observation
@@ -125,9 +119,7 @@ class singleEnv(gym.Env):
         head_x = self.player[0]
         head_y = self.player[1]
 
-        gem_delta_x = self.gem_position[0] - head_x
-        gem_delta_y = self.gem_position[1] - head_y
-        return {np.array([head_x, head_y, gem_delta_x, gem_delta_y] + list(self.prev_actions))}
+        return {np.array([head_x, head_y, self.gem_position[0], self.gem_position[1]] + list(self.prev_actions))}
 
     def _get_info(self):
         return {}
