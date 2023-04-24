@@ -52,7 +52,7 @@ def train_loop(model, dataloader, val_dataloader, optimizer, criterion, device, 
     # Load model and environment
     env = singleEnv()
     env.reset()
-    model_path = f"final_models/380000.zip"
+    model_path = f"380000.zip"
     expert_policy = PPO.load(model_path, env=env)
     model.train()
     for epoch in range(epochs):
@@ -80,7 +80,7 @@ def train_loop(model, dataloader, val_dataloader, optimizer, criterion, device, 
                         expert_action = [np.argmax(x.cpu()).item() for x in expert_action]
 
                         val_acc += np.count_nonzero([val_actions[x].cpu() == expert_action[x] for x in range(len(val_actions.cpu()))])/len(val_actions.cpu())
-\                       # Insert Model object to render here
+                       # Insert Model object to render here
                         val_outputs = model(val_states)
                         val_loss += criterion(val_outputs, val_actions).item()
                     val_loss /= len(val_dataloader)
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     val_loader = DataLoader(val_dataset, batch_size=1, shuffle=True)
 
     # Prepare for training
-    device = 'cuda:0'
+    device = 'cpu'
     bc_agent = BC(input_size=4, output_size=5).to(device)
     optimizer = torch.optim.Adam(bc_agent.parameters(), lr=0.0002)
     criterion = torch.nn.CrossEntropyLoss()
