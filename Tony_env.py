@@ -20,10 +20,7 @@ class singleEnv(gym.Env):
         super(singleEnv, self).__init__()
         self.action_space = spaces.Discrete(4)
         self.observation_space = spaces.Box(low=-500, high=500, shape=(4 + GOAL,), dtype=np.float32)
-
-    def __init__(self, delta):
-        singleEnv.__init__()
-        self.DELTA = delta
+        self.DELTA = 0
 
     def step(self, action):
         self.num_steps += 1

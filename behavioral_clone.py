@@ -33,9 +33,9 @@ class BC(torch.nn.Module):
     def __init__(self, input_size, output_size):
         super(BC, self).__init__()
         self.model = torch.nn.Sequential(
-            torch.nn.Linear(input_size, 7),
+            torch.nn.Linear(input_size, 9),
             torch.nn.LeakyReLU(),
-            torch.nn.Linear(7, 5),
+            torch.nn.Linear(9, 5),
             torch.nn.LeakyReLU(),
             torch.nn.Linear(5, output_size),
             torch.nn.Softmax(dim=1)
