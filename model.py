@@ -1,7 +1,14 @@
 from stable_baselines3 import PPO
+import gym
 import os
 from env import singleEnv
 import csv
+from ale_py import ALEInterface
+from ale_py.roms import Breakout
+
+ale = ALEInterface()
+ale.loadROM(Breakout)
+
 # In cmd Admin
 # tensorboard --logdir=logs
 
@@ -14,9 +21,9 @@ if not os.path.exists(models_dir):
 if not os.path.exists(logdir):
     os.makedirs(logdir)
 testing = False
-csv_generation = True
+csv_generation = False
 
-env = singleEnv()
+env = gym.make('ALE/Breakout-v5')
 env.reset()
 if testing or csv_generation:
     model_path = f"{models_dir}/380000.zip"
