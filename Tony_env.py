@@ -15,15 +15,16 @@ def collision_with_boundaries(player):
     return 0
 
 
-class singleEnv(gym.Env):
+class TonySingleEnv(gym.Env):
     def __init__(self):
-        super(singleEnv, self).__init__()
+        super(TonySingleEnv, self).__init__()
         self.action_space = spaces.Discrete(4)
         self.observation_space = spaces.Box(low=-500, high=500, shape=(4 + GOAL,), dtype=np.float32)
+        DELTA = 1
 
-    def __init__(self, delta):
-        singleEnv.__init__()
-        self.DELTA = delta
+    # def __init__(self, delta):
+    #     singleEnv.__init__()
+    #     self.DELTA = delta
 
     def step(self, action):
         self.num_steps += 1
@@ -94,13 +95,13 @@ class singleEnv(gym.Env):
                 k = cv2.waitKey(1)
             else:
                 continue
-    def reset(self):
+    def reset(self, delta):
         self.img = np.zeros((500, 500, 3), dtype='uint8')
         self.total_gems = 0
         self.num_steps = 0
         # Initial Player and Gem position
+        self.DELTA = delta
         self.player_position = [[random.randrange(1, 10) * 50, random.randrange(1, 10) * 50]]
-        self.DELTA
         self.gem_position = [random.randrange(4 - self.DELTA, 4 + self.DELTA) * 50, random.randrange(4 - self.DELTA, 4 + self.DELTA) * 50]
         #self.gem_position = [200, 200]
         self.score = 0

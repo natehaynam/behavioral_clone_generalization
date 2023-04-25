@@ -20,6 +20,8 @@ class singleEnv(gym.Env):
         super(singleEnv, self).__init__()
         self.action_space = spaces.Discrete(4)
         self.observation_space = spaces.Box(low=-500, high=500, shape=(4 + GOAL,), dtype=np.float32)
+        self.done = False
+        self.reached_gem = False
 
     def step(self, action):
         self.num_steps += 1
@@ -43,6 +45,7 @@ class singleEnv(gym.Env):
             gem_reward = 10000
             self.total_gems += 1
             self.done = True
+            self.reached_gem = True
         else:
             self.player_position.insert(0, list(self.player))
             self.player_position.pop()
@@ -54,6 +57,7 @@ class singleEnv(gym.Env):
         # On collision kill the player
         if collision_with_boundaries(self.player) == 1 or self.total_gems == 10:
             self.done = True
+            self.reached_gem = False
             if collision_with_boundaries(self.player) == 1:
                 self.total_reward -= 100000
         info = {}
@@ -81,7 +85,7 @@ class singleEnv(gym.Env):
         for position in self.player_position:
             cv2.rectangle(self.img, (position[0], position[1]), (position[0] + 50, position[1] + 50), (255, 0, 0),
                           -1)
-        t_end = time.time() + 0.10
+        t_end = time.time() #+ 0.10
         k = -1
         while time.time() < t_end:
             if k == -1:
@@ -101,6 +105,35 @@ class singleEnv(gym.Env):
         self.player = self.player_position[0]
 
         self.done = False
+        self.reached_gem = False
+
+        head_x = self.player[0]
+        head_y = self.player[1]
+
+        self.prev_actions = deque(maxlen=GOAL)  # however long we aspire the snake to be
+        for i in range(GOAL):
+            self.prev_actions.append(-1)  # to create history
+
+        # create observation:
+        observation = [head_x, head_y, self.gem_position[0], self.gem_position[1]] + list(self.prev_actions)
+        observation = np.array(observation)
+
+        return observation
+    
+    def eval_reset(self, DELTA):
+        self.img = np.zeros((500, 500, 3), dtype='uint8')
+        self.total_gems = 0
+        self.num_steps = 0
+        # Initial Player and Gem position
+        self.player_position = [[random.randrange(1, 10) * 50, random.randrange(1, 10) * 50]]
+        self.gem_position = [random.randrange(4 - DELTA, 4 + DELTA) * 50, random.randrange(4 - DELTA, 4 + DELTA) * 50]
+        self.score = 0
+        self.prev_button_direction = 1
+        self.button_direction = 1
+        self.player = self.player_position[0]
+
+        self.done = False
+        self.reached_gem = False
 
         head_x = self.player[0]
         head_y = self.player[1]
@@ -123,3 +156,4 @@ class singleEnv(gym.Env):
 
     def _get_info(self):
         return {}
+    
