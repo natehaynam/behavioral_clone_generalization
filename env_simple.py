@@ -36,7 +36,7 @@ class simpleEnv(gym.Env):
             self.player[1] -= 50
 
         # Reward for mining Gem
-        if self.player[0] == self.gem_position[0] and self.player[1] == self.gem_position[1]:
+        if abs(self.player[0] - self.gem_position[0]) + abs(self.player[1] - self.gem_position[1]) <= 50:
             self.score += 1
             self.total_gems += 1
             self.done = True
@@ -52,6 +52,13 @@ class simpleEnv(gym.Env):
         cv2.waitKey(15)
         # Display Grid
         self.img = np.zeros((500, 500, 3), dtype='uint8')
+        self.img.fill(255)
+
+        OFFSET = 2
+        for x in range(10):
+            for y in range(10):
+                cv2.rectangle(self.img, (x*50+OFFSET, y*50+OFFSET),
+                      ((x+1)*50-OFFSET, (y+1)*50-OFFSET), (0, 0, 0), -1)
 
         # Display Gem and Player
         if (self.gem_position == self.player):

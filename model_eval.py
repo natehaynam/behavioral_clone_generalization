@@ -20,7 +20,7 @@ with torch.no_grad():
         model.load_state_dict(torch.load(f"mec_models/{model_name}", map_location=torch.device(device)))
         model.eval()
 
-        for delta in range(1, 4):
+        for delta in range(0, 4):
             counter_acc = 0
             env = simpleEnv()
             env.DELTA = delta
@@ -28,18 +28,18 @@ with torch.no_grad():
             for _ in range(100):
                 env.reset()
                 obs = env.reset()
-                env.render()
+                # env.render()
                 i = 0
 
-                while (i < 20):
+                while (not env.done and i < 20):
                     env_obs = torch.Tensor([[obs[0], obs[1], obs[2], obs[3]]]).to(torch.float).to(device)
-                    print("Player: [", obs[0], obs[1], "] --- Gem: [", obs[2], obs[3], "]")
+                    # print("Player: [", obs[0], obs[1], "] --- Gem: [", obs[2], obs[3], "]")
                     action = model(env_obs)
 
                     action = [np.argmax(x.cpu()).item() for x in action][0]
-                    print(action)
+                    # print(action)
                     obs, reward, done, info = env.step(action)
-                    env.render()
+                    # env.render()
                     i += 1
                 print('DONE:', env.done)
                 if env.done:
